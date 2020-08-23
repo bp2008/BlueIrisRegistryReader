@@ -69,7 +69,7 @@ namespace BlueIrisRegistryReader
 						for (int i = 1; i <= 7; i++)
 						{
 							if (cam.recordSettings[i].sync)
-								cam.recordSettings[1] = syncFrom.recordSettings[i];
+								cam.recordSettings[i] = syncFrom.recordSettings[i];
 						}
 					}
 					// Then sync the triggerSettings
@@ -90,7 +90,7 @@ namespace BlueIrisRegistryReader
 						for (int i = 1; i <= 7; i++)
 						{
 							if (cam.triggerSettings[i].sync)
-								cam.triggerSettings[1] = syncFrom.triggerSettings[i];
+								cam.triggerSettings[i] = syncFrom.triggerSettings[i];
 						}
 					}
 				}
