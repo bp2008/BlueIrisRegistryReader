@@ -21,7 +21,7 @@ namespace BlueIrisRegistryReader
 		/// </summary>
 		public int profile;
 		public bool sync;
-
+		public RecordTabSettings() { }
 		public RecordTabSettings(RegistryKey cameraKey, int profile)
 		{
 			this.profile = profile;
