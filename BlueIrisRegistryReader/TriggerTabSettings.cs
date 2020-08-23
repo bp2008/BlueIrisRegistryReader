@@ -10,29 +10,36 @@ namespace BlueIrisRegistryReader
 		/// </summary>
 		public string camsync;
 		public bool motionDetectionEnabled;
-		public RecordingTriggerType triggerType;
+		/// <summary>
+		/// The profile number which these settings came from. May not match the profile index where you got this object instance from.
+		/// </summary>
+		public int profile;
+		public bool sync;
 
 		public TriggerTabSettings(RegistryKey cameraKey, int profile)
 		{
+			this.profile = profile;
 			RegistryKey motionKey = cameraKey.OpenSubKey("Motion");
 
 			// Read settings from trigger tab.
-			RegEdit trigger = new RegEdit(motionKey.OpenSubKey(profile.ToString()));
+			// As of BI 5.3.1.6 there appears to be a quirk for the "Motion" key where profile 1 is stored at the root and the other profiles are stored in the subkeys named by profile - 1.
+			RegEdit trigger;
+			if (profile == 1)
+				trigger = new RegEdit(motionKey);
+			else
+				trigger = new RegEdit(motionKey.OpenSubKey((profile - 1).ToString()));
 
-			// See if we're reading from this key or from a different one.
-			int sync = trigger.DWord("sync");
-			if (sync > 0)
-				trigger = new RegEdit(motionKey.OpenSubKey(sync.ToString()));
 
+			this.sync = trigger.DWord("sync") > 0; // If > 0, most of the other settings in this object should be ignored.
 			this.camsync = trigger.String("camsync");
 			this.motionDetectionEnabled = trigger.DWord("enabled") == 1;
-			this.triggerType = (RecordingTriggerType)trigger.DWord("continuous");
 		}
 	}
 	public enum RecordingTriggerType : byte
 	{
 		Motion = 0,
 		Continuous = 1,
+		NoRecording = 2,
 		Periodic = 3,
 		TriggeredAndPeriodic = 4,
 		TriggeredAndContinuous = 5

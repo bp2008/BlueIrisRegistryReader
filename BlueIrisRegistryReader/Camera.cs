@@ -39,6 +39,7 @@ namespace BlueIrisRegistryReader
 		/// </summary>
 		public TriggerTabSettings[] triggerSettings = new TriggerTabSettings[8];
 
+		public Camera() { }
 		public Camera(string name, RegistryKey cameraKey)
 		{
 			this.name = name;

@@ -1,5 +1,6 @@
 ﻿using BPUtil;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,8 +37,64 @@ namespace BlueIrisRegistryReader
 				global = new BIGlobalConfig();
 				global.Load();
 
+
+				SortedList<string, Camera> camerasByShortname = new SortedList<string, Camera>();
 				foreach (string camName in camerasKey.GetSubKeyNames())
-					cameras.Add(camName, new Camera(camName, camerasKey.OpenSubKey(camName)));
+				{
+					Camera cam = new Camera(camName, camerasKey.OpenSubKey(camName));
+					cameras.Add(camName, cam);
+					// Make a copy of [cam] to put into the second SortedList, because later we are going to be modifying Camera objects in the first SortedList.
+					camerasByShortname.Add(cam.shortname, JsonConvert.DeserializeObject<Camera>(JsonConvert.SerializeObject(cam)));
+				}
+
+				{
+					// Implement "sync" functionality where some cameras and some profiles can point at other cameras and/or profiles.
+					// Blue Iris totally allows circular references when syncing between cameras, with undefined and unexplored behavior, so we'll only be implementing one iteration of syncing.
+
+					// First sync the recordSettings
+					foreach (Camera cam in cameras.Values)
+					{
+						Camera syncFrom = cam;
+						if (cam.recordSettings[1].sync)
+						{
+							// Profile 1 says to sync.  This means every profile with the sync flag set will be synced from a different camera.
+							if (cam.recordSettings[1].camsync != null)
+							{
+								if (camerasByShortname.TryGetValue(cam.recordSettings[1].camsync, out Camera tmp))
+								{
+									syncFrom = tmp;
+								}
+							}
+						}
+						for (int i = 1; i <= 7; i++)
+						{
+							if (cam.recordSettings[i].sync)
+								cam.recordSettings[1] = syncFrom.recordSettings[i];
+						}
+					}
+					// Then sync the triggerSettings
+					foreach (Camera cam in cameras.Values)
+					{
+						Camera syncFrom = cam;
+						if (cam.triggerSettings[1].sync)
+						{
+							// Profile 1 says to sync.  This means every profile with the sync flag set will be synced from a different camera.
+							if (cam.triggerSettings[1].camsync != null)
+							{
+								if (camerasByShortname.TryGetValue(cam.triggerSettings[1].camsync, out Camera tmp))
+								{
+									syncFrom = tmp;
+								}
+							}
+						}
+						for (int i = 1; i <= 7; i++)
+						{
+							if (cam.triggerSettings[i].sync)
+								cam.triggerSettings[1] = syncFrom.triggerSettings[i];
+						}
+					}
+				}
+
 				cpu = CpuInfo.GetCpuInfo();
 				gpus = GpuInfo.GetGpuInfo();
 				mem = RamInfo.GetRamInfo();
