@@ -28,7 +28,12 @@ namespace BlueIrisRegistryReader
 		public bool LimitDecode;
 		public int WidthPx;
 		public int HeightPx;
+		public int MainWidthPx;
+		public int MainHeightPx;
 		public int Pixels;
+		public int MainPixels;
+		public string ip_subpath;
+		public bool hasSubStream;
 
 		/// <summary>
 		/// An array of record tab settings for each profile (1-7).  Ignore the item at index 0.
@@ -55,6 +60,17 @@ namespace BlueIrisRegistryReader
 			this.HeightPx = camera.DWord("fullyres");
 			this.Pixels = this.WidthPx * this.HeightPx;
 			this.Type = (CameraType)camera.DWord("type");
+			this.ip_subpath = camera.String("ip_subpath");
+			this.MainWidthPx = camera.DWord("mainxres");
+			this.MainHeightPx = camera.DWord("mainyres");
+			this.MainPixels = this.MainWidthPx * this.MainHeightPx;
+			this.hasSubStream = !string.IsNullOrWhiteSpace(ip_subpath)
+				&& this.MainWidthPx != 0
+				&& this.WidthPx != 0
+				&& this.MainHeightPx != 0
+				&& this.HeightPx != 0
+				&& this.MainWidthPx != this.WidthPx
+				&& this.MainHeightPx != this.HeightPx;
 
 			// Read profile-specific configurations
 			for (int i = 1; i <= 7; i++)
