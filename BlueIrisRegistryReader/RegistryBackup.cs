@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BPUtil;
 
-namespace BiUpdateHelper
+namespace BlueIrisRegistryReader
 {
 	public static class RegistryBackup
 	{
@@ -79,7 +79,11 @@ namespace BiUpdateHelper
 			psi.CreateNoWindow = true;
 			psi.UseShellExecute = false;
 			Process proc = Process.Start(psi);
-			proc.PriorityClass = ProcessPriorityClass.BelowNormal;
+			try
+			{
+				proc.PriorityClass = ProcessPriorityClass.BelowNormal;
+			}
+			catch { }
 			proc.WaitForExit();
 		}
 	}
