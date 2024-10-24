@@ -90,14 +90,17 @@ img
 						foreach (string cameraName in cameraNames)
 						{
 							RegistryKey cam = cameras.OpenSubKey(cameraName);
-							string shortName = cam.GetValue("shortname").ToString();
-							string ip = cam.GetValue("ip").ToString();
+							string shortName = cam.GetValue("shortname")?.ToString() ?? "null";
+							string ip = cam.GetValue("ip")?.ToString();
 							if (string.IsNullOrWhiteSpace(ip))
 								continue;
-							string port = cam.GetValue("ip_port").ToString();
-							bool https = cam.GetValue("https").ToString() != "0";
-							int index = int.Parse(cam.GetValue("pos").ToString());
-							CameraInfo ci = new CameraInfo(cameraName, shortName, ip, port, https, index);
+							string port = cam.GetValue("ip_port")?.ToString();
+							bool https = (cam.GetValue("https")?.ToString() ?? "0") != "0";
+							int index;
+							if (!int.TryParse(cam.GetValue("pos")?.ToString() ?? "0", out index))
+								index = 0;
+							bool enabled = cam.GetValue("enabled")?.ToString() == "1";
+							CameraInfo ci = new CameraInfo(cameraName, shortName, ip, port, https, index, enabled);
 							camList.Add(ci);
 						}
 						camList.Sort(new Comparison<CameraInfo>((c1, c2) => c1.index.CompareTo(c2.index)));
@@ -142,7 +145,15 @@ img
 		private static void AddCameraLink(StringBuilder sb, CameraInfo ci, WebClient wc)
 		{
 			string link = "http" + (ci.https ? "s" : "") + "://" + ci.ip + (ci.port == (ci.https ? "443" : "80") ? "" : (":" + ci.port)) + "/";
-			string snapshot = wc == null ? "Unable to authenticate" : GetSnapshot(ci.shortName, ci.cameraName + " (" + ci.shortName + ") (" + link + ")", wc);
+			string snapshot;
+			if (ci.enabled)
+			{
+				if (wc == null)
+					snapshot = "Unable to authenticate";
+				snapshot = GetSnapshot(ci.shortName, ci.cameraName + " (" + ci.shortName + ") (" + link + ")", wc);
+			}
+			else
+				snapshot = "Camera Disabled";
 			sb.Append("<tr>");
 			sb.Append("<td>" + ci.cameraName + "</td>");
 			sb.Append("<td>" + ci.shortName + "</td>");
@@ -174,8 +185,9 @@ img
 			public string port;
 			public bool https;
 			public int index;
+			public bool enabled;
 
-			public CameraInfo(string cameraName, string shortName, string ip, string port, bool https, int index)
+			public CameraInfo(string cameraName, string shortName, string ip, string port, bool https, int index, bool enabled)
 			{
 				this.cameraName = cameraName;
 				this.shortName = shortName;
@@ -183,6 +195,7 @@ img
 				this.port = port;
 				this.https = https;
 				this.index = index;
+				this.enabled = enabled;
 			}
 		}
 	}

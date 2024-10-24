@@ -39,14 +39,19 @@ namespace BlueIrisRegistryReader
 
 
 				SortedList<string, Camera> camerasByShortname = new SortedList<string, Camera>();
+				int camIdx = 0;
 				foreach (string camName in camerasKey.GetSubKeyNames())
 				{
 					Camera cam = new Camera(camName, camerasKey.OpenSubKey(camName));
 					if (cam.shortname == null)
-						throw new Exception("Camera \"" + camName + "\" has null shortname field.");
+					{
+						cam.shortname = "null" + camIdx;
+						//throw new Exception("Camera \"" + camName + "\" has null shortname field.");
+					}
 					cameras.Add(camName, cam);
 					// Make a copy of [cam] to put into the second SortedList, because later we are going to be modifying Camera objects in the first SortedList.
-					camerasByShortname.Add(cam.shortname, JsonConvert.DeserializeObject<Camera>(JsonConvert.SerializeObject(cam)));
+					camerasByShortname[cam.shortname] = JsonConvert.DeserializeObject<Camera>(JsonConvert.SerializeObject(cam));
+					camIdx++;
 				}
 
 				{

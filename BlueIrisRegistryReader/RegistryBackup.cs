@@ -39,7 +39,21 @@ namespace BlueIrisRegistryReader
 					fi.Refresh();
 					if (fi.Exists)
 					{
-						ZipFile(destinationFile, destinationFile + ".7z");
+						try
+						{
+							ZipFile(destinationFile, destinationFile + ".7z");
+						}
+						catch (Exception ex)
+						{
+							Logger.Debug(ex);
+							Logger.Info("Registry backup completed, but 7zip failed to compress the .reg file. It will be moved to the BiUpdateHelper root directory as \"FailedBackup.reg\".");
+							string moveDst = Globals.ApplicationDirectoryBase + "FailedBackup.reg";
+							if (File.Exists(moveDst))
+								File.Delete(moveDst);
+							File.Move(destinationFile, moveDst);
+							Logger.Info("Move complete.");
+							return;
+						}
 						fi.Delete();
 						Logger.Info("Registry backup complete: " + destinationFile);
 					}
@@ -74,17 +88,7 @@ namespace BlueIrisRegistryReader
 		}
 		private static void ZipFile(string SourcePath, string TargetFile)
 		{
-			// Run single-threaded 7zip with BelowNormal priority
-			ProcessStartInfo psi = new ProcessStartInfo("7zip\\7za.exe", "a -t7z -mmt1 \"" + TargetFile + "\" \"" + SourcePath + "\"");
-			psi.CreateNoWindow = true;
-			psi.UseShellExecute = false;
-			Process proc = Process.Start(psi);
-			try
-			{
-				proc.PriorityClass = ProcessPriorityClass.BelowNormal;
-			}
-			catch { }
-			proc.WaitForExit();
+			SevenZip.Create7zArchive("7zip\\7za.exe", TargetFile, SourcePath, 1, true, true);
 		}
 	}
 }
